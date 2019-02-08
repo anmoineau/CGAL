@@ -3,6 +3,7 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <iostream>
 #include <fstream>
+#include <queue>
 #include <CGAL/squared_distance_3.h>
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
@@ -12,8 +13,17 @@ typedef Polyhedron::Vertex_iterator Vertex_iterator;
 typedef Polyhedron::Halfedge_iterator Halfedge_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 
+struct Color{
+	float R;
+	float G;
+	float B;
+	Color(float r, float g, float b): R(r), G(g), B(b){}
+	Color(): R(0), G(0), B(0){}
+};
+
 void Draw(Polyhedron & P, std::map<Polyhedron::Facet_handle, int> categories){
-	//liste de couleurs aleatoire de taille nombre de categorie -> Couleurs[categories[i]]
+	srand (time(NULL));
+	std::map<int, Color> couleurs;
 	std::fstream file;
 	file.open("../Rendu.off");
 	file << "OFF" << std::endl << P.size_of_vertices() << ' ' << P.size_of_facets() << " 0" << std::endl;
@@ -25,7 +35,14 @@ void Draw(Polyhedron & P, std::map<Polyhedron::Facet_handle, int> categories){
         do {
             file << ' ' << std::distance(P.vertices_begin(), j->vertex());
         } while ( ++j != i->facet_begin());
-		file<<"  "<<((categories[i] == 1)? 0.25 : 0.75)<<' '<<((categories[i] == 2)? 1.000 : 0.000)<<' '<<"1.000"<<' '<<"0.75"<< std::endl;
+		Color c;
+		if(couleurs.find(categories[i]) != couleurs.end()){
+			c = couleurs[categories[i]];
+		} else {
+			couleurs[categories[i]] = Color(std::rand()/(float)RAND_MAX, std::rand()/(float)RAND_MAX, std::rand()/(float)RAND_MAX);
+			c = couleurs[categories[i]];
+		}
+		file<<"  "<< c.R <<' '<<c.G<<' '<<c.B<<' '<<"0.75"<< std::endl;
         file << std::endl;
 	}
 }
@@ -63,14 +80,40 @@ std::map<Polyhedron::Facet_handle, int> ComputeTreshold(Polyhedron & P, std::map
 	return categories;
 }
 
-/*std::map<Polyhedron::Facet_handle, int> ModifyCategorie(Polyhedron & P, std::map<Polyhedron::Facet_handle, int> & categories){
+std::map<Polyhedron::Facet_handle, int> ModifyCategories(Polyhedron & P, std::map<Polyhedron::Facet_handle, int> & categories){
+	int categorie;
+	int subCategorie = 0;
+	std::map<Polyhedron::Facet_handle, int> subCategories;
 	std::map<Polyhedron::Facet_handle, bool> visite;
-	//parcours face -> visité
-	//faire le tour des arretes -> empiler facet associée si non visitée 
-	//attribuer nouvelle categorie
-	//jusqu'a pile vide
-	//partir d'une autre face non visisté
-}*/
+	std::queue<Polyhedron::Facet_handle> aVisiter;
+	
+	for (Facet_iterator i = P.facets_begin(); i != P.facets_end(); ++i) {
+		visite[i] = false;
+	}
+
+	for (Facet_iterator i = P.facets_begin(); i != P.facets_end(); ++i) {
+		if(!visite[i]){
+			subCategorie ++;
+			aVisiter.push(i);
+			visite[i]=true;
+			categorie = categories[i];
+			while(!aVisiter.empty()){
+				Polyhedron::Facet_handle faceCour = aVisiter.front();
+				aVisiter.pop();
+				subCategories[faceCour]=subCategorie;
+				Halfedge_facet_circulator j = faceCour->facet_begin();
+				CGAL_assertion( CGAL::circulator_size(j) >= 3);
+				do {
+					if(!visite[j->opposite()->facet()] && categories[j->opposite()->facet()] == categorie){
+						aVisiter.push(j->opposite()->facet());
+						visite[j->opposite()->facet()] = true;
+					}
+				} while ( ++j != faceCour->facet_begin());
+			}
+		}	
+	}
+	return subCategories;
+}
 
 
 int main(int argc, char* argv[])
@@ -111,7 +154,8 @@ int main(int argc, char* argv[])
 	float min, max, mean;
 	std::map<Polyhedron::Facet_handle, double> perimetres = ComputePerimetre(mesh,min, max, mean);
 	std::map<Polyhedron::Facet_handle, int> categories = ComputeTreshold(mesh, perimetres, mean);
-	Draw(mesh, categories);
+	std::map<Polyhedron::Facet_handle, int> subCategories = ModifyCategories(mesh, categories);
+	Draw(mesh, subCategories);
   
 	return 0;
 }
