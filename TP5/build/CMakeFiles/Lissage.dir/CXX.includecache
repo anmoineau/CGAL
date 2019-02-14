@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/LOCAL.ISIMA.FR/anmoineau/Documents/TP_CGAL/TP5/src/Lissage.cpp
+CGAL/Exact_predicates_inexact_constructions_kernel.h
+-
+CGAL/boost/graph/graph_traits_Polyhedron_3.h
+-
+CGAL/IO/Polyhedron_iostream.h
+-
+iostream
+-
+fstream
+-
+queue
+-
+CGAL/squared_distance_3.h
+-
+
