@@ -225,8 +225,8 @@ int main(int argc, char* argv[])
 	std::cout << "En supposant que le maillage contienne une unique surface sans bord, alors son genre est de " << genus << std::endl;
 	
 	std::map<Polyhedron::Facet_handle, double> perimetres = ComputePerimetre(mesh);
-	//std::map<Polyhedron::Facet_handle, int> categories = ComputeTreshold(mesh, perimetres);
-	std::map<Polyhedron::Facet_handle, int> categories = ComputeOtsu(mesh, perimetres);
+	std::map<Polyhedron::Facet_handle, int> categories = ComputeTreshold(mesh, perimetres);
+	//std::map<Polyhedron::Facet_handle, int> categories = ComputeOtsu(mesh, perimetres);
 	std::map<Polyhedron::Facet_handle, int> subCategories = ModifyCategories(mesh, categories);
 	Draw(mesh, subCategories);
   
